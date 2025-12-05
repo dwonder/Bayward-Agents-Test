@@ -1,46 +1,44 @@
-name: Deploy Web App
+name: Deploy React App to Pages
 
 on:
   push:
-    branches:
-      - main # Trigger on push to the main branch
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
-  build:
-    runs-on: ubuntu-latest # Specify the runner environment
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4 # Action to check out the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Specify your language version
+          node-version: 20
+
       - name: Install dependencies
         run: npm install
-      - name: Build application
-        run: npm run build
-      - name: Upload production artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-build
-          path: build # Path to your built application files
-  
-  deploy:
-    needs: build # This job runs only after the 'build' job succeeds
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download production artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app-build
-          path: app-to-deploy # Download the build files
 
-      - name: Deploy to Hosting Service # The specific deployment step varies widely
-        # This will typically use a specific Action for your cloud provider (e.g., Azure, AWS, DigitalOcean)
-        # or a generic SSH/FTP action for a custom server.
-        uses: some-deploy-action/deploy-app@v1 
+      - name: Build the project
+        run: npm run build -- --base=/Cyber_Jeopardy/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          # Configuration for the deployment action, often involving secrets
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          path: './dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
