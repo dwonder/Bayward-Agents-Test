@@ -10,6 +10,11 @@ permissions:
   pages: write
   id-token: write
 
+# This section prevents multiple deployments from running at the same time
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
   deploy:
     environment:
@@ -24,12 +29,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          # We removed the 'matrix' strategy here to prevent double-building
 
       - name: Install dependencies
         run: npm install
+        # If your package.json is in a subfolder, uncomment the next line and add the folder name
+        # working-directory: ./your-subfolder-name
 
       - name: Build the project
         run: npm run build -- --base=/Bayward-Agents-Test/
+        # If your package.json is in a subfolder, uncomment the next line and add the folder name
+        # working-directory: ./your-subfolder-name
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -38,6 +48,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
+          # If your subfolder build puts 'dist' inside that subfolder, change path to: './your-subfolder-name/dist'
 
       - name: Deploy to GitHub Pages
         id: deployment
